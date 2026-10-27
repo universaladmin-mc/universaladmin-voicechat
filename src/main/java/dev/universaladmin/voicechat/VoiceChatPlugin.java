@@ -43,6 +43,13 @@ public final class VoiceChatPlugin extends JavaPlugin {
         VoiceChatBridge bridge = new VoiceChatBridge();
         voicechat.registerPlugin(bridge);
         universalAdmin.get().extensions().register(this, new VoiceChatModule(universalAdmin.get(), bridge));
+
+        // UniversalAdmin 1.6+ checks this extension's own releases too; older ones lack the method.
+        try {
+            universalAdmin.get().extensions().updatesFrom(this, "universaladmin-mc/universaladmin-voicechat", "universaladmin-voicechat-");
+        } catch (NoSuchMethodError olderUniversalAdmin) {
+            // Updates come by hand, as before.
+        }
     }
 
     /** Compares "major.minor" version strings numerically. */

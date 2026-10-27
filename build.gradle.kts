@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "dev.universaladmin.voicechat"
-version = rootProject.version
+version = "1.6.0"
 base.archivesName.set("universaladmin-voicechat")
 
 java {
@@ -23,11 +23,17 @@ java {
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/") { name = "papermc" }
+    // UniversalAdmin's releases - its jar contains the extension API.
+    maven("https://api.modrinth.com/maven") { name = "modrinth" }
     maven("https://maven.maxhenkel.de/repository/public") { name = "voicechat" }
 }
 
+/** UniversalAdmin to compile against: a local build (-PuniversaladminJar=...) or the release from Modrinth. */
+val universalAdmin: Any = providers.gradleProperty("universaladminJar").orNull?.let { files(it) }
+    ?: "maven.modrinth:universaladmin:${property("universaladminVersion")}"
+
 dependencies {
-    compileOnly(project(":universaladmin-api"))
+    compileOnly(universalAdmin)
     compileOnly("io.papermc.paper:paper-api:${property("paperApiVersion")}")
     // The oldest API version with everything used here, so the extension
     // runs with every Simple Voice Chat release for the supported Minecraft
@@ -37,7 +43,7 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.12.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation(project(":universaladmin-api"))
+    testImplementation(universalAdmin)
     testImplementation("io.papermc.paper:paper-api:${property("paperApiVersion")}")
     testImplementation("de.maxhenkel.voicechat:voicechat-api:2.5.0")
 }
@@ -58,4 +64,18 @@ tasks.processResources {
     filesMatching("plugin.yml") {
         expand(props)
     }
+}
+
+// Every jar carries its license (GPL-3.0-or-later).
+tasks.withType<Jar>().configureEach {
+    from("LICENSE") {
+        into("META-INF")
+    }
+}
+
+tasks.register("printVersion") {
+    group = "help"
+    description = "Prints the project version (used by the release workflow's tag check)."
+    val projectVersion = project.version.toString()
+    doLast { println(projectVersion) }
 }
